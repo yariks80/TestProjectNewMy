@@ -1,15 +1,23 @@
 package com.it.driver;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import com.it.common.Constants;
+import io.qameta.allure.Allure;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class MyDriver implements WebDriver {
     private WebDriver driver;
+    private static int count;
     private static MyDriver myDriver;
 
     private MyDriver() {
@@ -92,6 +100,43 @@ public class MyDriver implements WebDriver {
 
     public void scrollDown() {
         ((JavascriptExecutor) driver).executeScript("window.scrollTo(0,document.body.scrollHeight)");
+    }
+    public void takeSnapShot() {
+        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        try {
+            FileUtils.copyFile(screenshot, new File("build//screenshot//screen" + count + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Path content = Paths.get("build//screenshot//screen" + count + ".png");
+        try (InputStream is = Files.newInputStream(content)) {
+            Allure.addAttachment("My attachment", is);
+        } catch (IOException e) {
+            //NOP
+        }
+        count++;
+    }
+    public void scrollToElement(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    public boolean isElementPresent(By locator) {
+        boolean result = false;
+        driver.manage().timeouts().
+                implicitlyWait(0, TimeUnit.SECONDS);
+        try {
+            List<WebElement> list = driver.findElements(locator);
+            driver.manage().timeouts().
+                    implicitlyWait(Constants.BASE_WAIT, TimeUnit.SECONDS);
+            result = list.size() != 0 && list.get(0).isDisplayed();
+        } catch (StaleElementReferenceException | NoSuchElementException e) {
+            //NOP
+        }
+        return result;
     }
 
 }

@@ -27,6 +27,7 @@ public class LoginPage extends BasePage {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        driver.takeSnapShot();
         inputUsername.clear();
         inputUsername.sendKeys(userName);
         inputPassword.clear();
